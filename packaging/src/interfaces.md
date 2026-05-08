@@ -165,6 +165,9 @@ The key steps are:
 | `addSsl.addXForwardedHeaders` | `boolean` | Whether to add `X-Forwarded-*` headers. |
 | `secure` | `{ ssl: boolean }` \| `null` | For non-HTTP protocols, whether the connection is secure. |
 
+> [!WARNING]
+> When `protocol: null`, the value of `secure` controls whether the binding is exposed on the LAN. Passing `secure: null` produces a Tor-only binding — no LAN iptables DNAT rule is written, and the port silently does not receive LAN traffic. To expose a non-HTTP service (raw TCP, UDP, peer-to-peer) on the LAN, you must pass `secure: { ssl: false }` (or `{ ssl: true }` if your service terminates TLS itself) **and** call `Origin.export([iface])` with at least one `createInterface` of `type: 'p2p'`. `bindPort()` alone does not expose the port — the `Origin.export()` step is what attaches the service interface and triggers the host-side forward-port script. This applies to UDP listeners (NetFlow, IPFIX, sFlow, WireGuard, DNS) and any raw-TCP peer service.
+
 ## Interface Options
 
 ```typescript

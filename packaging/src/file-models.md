@@ -139,6 +139,23 @@ export const networkXml = FileHelper.xml(
 > [!NOTE]
 > All read methods return `null` if the file doesn't exist. Do NOT use try-catch for missing files.
 
+> [!WARNING]
+> Do not call `.write()` or `.merge()` on a file model after reading it with `.const(effects)` in the same `setupMain` (or other reactive) scope. `.const()` registers the file as a reactive dependency of the surrounding context — writing to it from the same scope would create a feedback loop, so the SDK rejects the write. If you need a fall-through default on first run, use nullish coalescing on the read result rather than branching into a write path:
+>
+> ```typescript
+> // GOOD: defaults from the read, no write needed
+> const config = (await configFile.read().const(effects)) ?? defaultConfig
+>
+> // BAD: write after .const() in same scope is rejected
+> let config = await configFile.read().const(effects)
+> if (!config) {
+>   config = defaultConfig
+>   await configFile.write(effects, config)  // ← rejected
+> }
+> ```
+>
+> The idiomatic way to seed a file on first install is `fileModel.merge(effects, {})` from `setupOnInit` (`seedFiles`), which runs in a separate effects scope. See [Initialization](./init.md#empty-seed-inits-drop-the-kind-parameter) and [Prefer merge() Over write()](#prefer-merge-over-write).
+
 ### Use the Map Function
 
 When reading file models, **always use the map function** to extract only the fields you need. This is critical for two reasons:
